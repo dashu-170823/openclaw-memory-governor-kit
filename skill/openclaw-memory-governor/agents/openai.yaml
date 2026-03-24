@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenClaw Memory Governor"
+  short_description: "Install, inspect, repair, and govern an OpenClaw memory stack."
+  default_prompt: "Use $openclaw-memory-governor to inspect or repair my OpenClaw memory stack."
