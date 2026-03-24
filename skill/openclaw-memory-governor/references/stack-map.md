@@ -41,6 +41,8 @@ On a typical Windows install, these become:
 - Engine: `openclaw-memory-openviking`
 - Purpose: reusable summaries and retrieval hints
 - Not for: project fulltext or raw transcripts
+- Default sync boundary: `orgs` and `projects`
+- Keep `agents/*` file-local by default to reduce cross-agent memory pollution
 
 ### File-grounded truth
 
@@ -64,6 +66,12 @@ On a typical Windows install, these become:
 - `project`: reusable project summaries and decision memory
 - `agent`: private agent experience and stable working lessons
 - `.memory-control`: candidate memory that is not ready for long-term sync
+
+## Sync Boundary
+
+- `OpenViking` is the shared cross-session retrieval layer for stable shared memory.
+- By default, only `org` and `project` memory should sync into it.
+- `agent` memory stays local unless someone deliberately rewrites part of it into shared summaries.
 
 ## Allowed Long-Term Memory
 

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { access, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 
-export const REQUIRED_SYNC_PATHS = ["orgs", "projects", "agents"];
+export const REQUIRED_SYNC_PATHS = ["orgs", "projects"];
 export const REQUIRED_FILES = [
   "AGENTS.md",
   "MEMORY.md",
@@ -28,6 +28,8 @@ const ALLOWED_MEMORY_TYPES = new Set([
   "decision-summary",
   "file-index",
 ]);
+
+const BLOCKED_SYNC_PATH_PREFIXES = ["agents"];
 
 const SCOPE_READ_ORDER = {
   root: ["root"],
@@ -183,7 +185,11 @@ export function patchOpenClawConfig(inputConfig, options) {
     changes,
     "memory.sync.waitTimeoutSec"
   );
-  memoryConfig.sync.extraPaths ??= [];
+  memoryConfig.sync.extraPaths = sanitizeSyncExtraPaths(
+    memoryConfig.sync.extraPaths ?? [],
+    changes,
+    "memory.sync.extraPaths"
+  );
   for (const extraPath of REQUIRED_SYNC_PATHS) {
     ensureArrayValue(memoryConfig.sync.extraPaths, extraPath, changes, "memory.sync.extraPaths");
   }
@@ -582,6 +588,7 @@ function buildTemplates({ openclawHome }) {
 
 - Only stable, approved, scoped memories belong in long-term memory.
 - Raw session text, project fulltext, and short-lived task state do not belong in long-term memory.
+- Organization and project memory may sync into OpenViking, but agent-private memory stays file-local by default.
 - Read \`orgs/default/memory-governance.md\` for the full routing and promotion policy.
 `,
     "orgs/default/policies.md": `# Organization Policies
@@ -609,6 +616,12 @@ function buildTemplates({ openclawHome }) {
 2. Approve only stable entries with the right scope
 3. Run \`node ${path.join(openclawHome, "scripts", "openclaw-memory-governor.mjs").replace(/\\/g, "/")} promote\`
 4. Use \`promotion-log.md\` as the audit trail
+
+## OpenViking Boundary
+
+- Sync \`orgs\` and \`projects\` into OpenViking
+- Keep \`agents/*\` as file-local private memory by default
+- Only share agent knowledge after manually rewriting it into shared summaries
 `,
     "orgs/default/memories.md": `# Organization Memories
 
@@ -627,6 +640,7 @@ Use this file for shared long-term organization memory only.
 - Admission gate decides what may enter long-term memory.
 - Scope routing follows \`agent -> project -> org -> root\`.
 - Candidate memories must stage outside synced paths first.
+- Agent-private memory remains file-local by default and does not auto-sync into OpenViking.
 `,
     "projects/default/memories.md": `# Project Memories
 
@@ -645,6 +659,7 @@ Do not paste project fulltext here.
 - Put uncertain memories into \`.memory-control/candidates.json\` first.
 - Promote only approved stable entries.
 - Read exact files before answering exact runtime questions.
+- This file is private to the agent by default and should not auto-sync into OpenViking.
 `,
     ".memory-control/README.md": `# Memory Control
 
@@ -728,6 +743,36 @@ function ensureArrayValue(array, value, changes, changeLabel) {
     array.push(value);
     changes.push(changeLabel);
   }
+}
+
+function sanitizeSyncExtraPaths(extraPaths, changes, changeLabel) {
+  const result = [];
+
+  for (const rawPath of Array.isArray(extraPaths) ? extraPaths : []) {
+    if (typeof rawPath !== "string") {
+      continue;
+    }
+
+    const trimmed = rawPath.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+    if (!trimmed) {
+      continue;
+    }
+
+    if (
+      BLOCKED_SYNC_PATH_PREFIXES.some(
+        (prefix) => trimmed === prefix || trimmed.startsWith(`${prefix}/`)
+      )
+    ) {
+      changes.push(changeLabel);
+      continue;
+    }
+
+    if (!result.includes(trimmed)) {
+      result.push(trimmed);
+    }
+  }
+
+  return result;
 }
 
 function setIfDifferent(object, key, value, changes, changeLabel) {

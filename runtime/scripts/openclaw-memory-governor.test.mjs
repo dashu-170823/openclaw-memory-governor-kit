@@ -36,7 +36,7 @@ test("scope routing prefers nearest scope first", () => {
   assert.deepEqual(resolveReadOrder("org"), ["org", "root"]);
 });
 
-test("config repair preserves unrelated provider config", () => {
+test("config repair preserves unrelated provider config and keeps agent-private memory out of OpenViking sync", () => {
   const original = {
     models: {
       providers: {
@@ -54,6 +54,7 @@ test("config repair preserves unrelated provider config", () => {
             sync: {
               onBoot: false,
               interval: "5m",
+              extraPaths: ["orgs", "projects", "agents"],
             },
           },
         },
@@ -69,6 +70,10 @@ test("config repair preserves unrelated provider config", () => {
   assert.equal(config.plugins.entries["openclaw-memory-openviking"].config.sync.onBoot, true);
   assert.equal(config.plugins.entries["openclaw-memory-openviking"].config.sync.interval, "15m");
   assert.equal(config.plugins.entries["openclaw-memory-openviking"].config.sync.waitForProcessing, true);
+  assert.deepEqual(
+    config.plugins.entries["openclaw-memory-openviking"].config.sync.extraPaths,
+    ["orgs", "projects"]
+  );
   assert.ok(changes.length > 0);
 });
 

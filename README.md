@@ -41,6 +41,12 @@
 - 长期记忆，不等于项目全文
 - 项目全文，应该留在文件里
 
+默认共享边界也要讲清楚：
+
+- `OpenViking` 默认同步 `org` 和 `project` 这两层稳定共享记忆
+- `agent` 私有记忆默认留在本地文件里，不自动进共享检索层
+- 如果以后要把某个 agent 的经验共享出去，应该先人工改写成共享摘要，再写入 `org/project` 层
+
 ## 它会给你装什么
 
 安装后会多出两部分：
@@ -226,6 +232,13 @@ node <OPENCLAW_HOME>/scripts/openclaw-memory-governor.mjs promote
 
 它更像“长期检索层”。
 
+但这里有一个很重要的边界：
+
+- 默认共享的是 `组织记忆` 和 `项目记忆`
+- 不是把每个 agent 的私有经验直接全灌进去
+
+这样做的目的，就是降低“记忆串味”和跨 agent 污染风险。
+
 ### 为什么还要保留文件真相源
 
 因为有些东西不能只靠记忆回答，比如：
@@ -253,6 +266,12 @@ node <OPENCLAW_HOME>/scripts/openclaw-memory-governor.mjs promote
   - 某个 agent 的私有经验
 - `.memory-control`
   - 候选记忆暂存区
+
+其中默认同步关系是：
+
+- `org/project` -> 可以进入 `OpenViking`
+- `agent` -> 默认只留在本地文件
+- `.memory-control` -> 先暂存，不直接进入共享长期记忆
 
 最重要的一条规则：
 

@@ -108,6 +108,7 @@ Important:
 
 - Preserve unrelated chat provider settings in `openclaw.json`.
 - Only repair memory-specific wiring, governance files, and the facts index.
+- Repair should enforce the shared-memory boundary: `OpenViking` syncs `orgs` and `projects`, while `agents/*` stays file-local by default.
 
 ### `reindex`
 
@@ -141,6 +142,7 @@ Use `references/stack-map.md`, then explain with these rules:
 
 - `lossless-claw` holds current-session raw context
 - `OpenViking` holds cross-session reusable summaries and retrieval hints
+- `OpenViking` should sync shared `org/project` memory, not agent-private memory by default
 - project fulltext stays in files
 - candidate memory stages in `.memory-control`
 - retrieval order is `agent -> project -> org -> root`
@@ -149,6 +151,7 @@ Use `references/stack-map.md`, then explain with these rules:
 
 - Never write raw session transcripts into long-term memory files.
 - Never put project fulltext into `OpenViking`-backed long-term memory.
+- Never auto-sync `agents/*` private memory into `OpenViking` unless the user explicitly wants a shared-memory design.
 - Never store short-lived task state as long-term memory.
 - Never overwrite unrelated parts of `openclaw.json`.
 - If governor code changes, run both:
